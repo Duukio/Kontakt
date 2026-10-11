@@ -35,7 +35,15 @@ export async function createPost(formData: FormData) {
     .from("posts")
     .insert({ author_id: user.id, wall_owner_id: wallOwnerId, body });
 
-  if (error) conError(username, "No se pudo publicar el mensaje.");
+  if (error) {
+    if (error.message.includes("posts_body_check")) {
+      conError(
+        username,
+        "Tu mensaje supera los 140 caracteres permitidos por la base de datos. Para permitir hasta 1000 caracteres, ejecutá en Supabase SQL Editor: ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_body_check; ALTER TABLE posts ADD CONSTRAINT posts_body_check CHECK (char_length(body) >= 1 AND char_length(body) <= 1000);"
+      );
+    }
+    conError(username, `No se pudo publicar el mensaje: ${error.message}`);
+  }
 
   revalidatePath(ruta(username));
   redirect(ruta(username));

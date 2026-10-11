@@ -27,7 +27,15 @@ export async function createFeedPost(formData: FormData) {
   });
 
   if (error) {
-    redirect("/?error=" + encodeURIComponent("No se pudo publicar tu estado."));
+    if (error.message.includes("posts_body_check")) {
+      redirect(
+        "/?error=" +
+          encodeURIComponent(
+            "Tu publicación supera los 140 caracteres permitidos por la base de datos. Para permitir hasta 1000 caracteres con links/fotos, ejecutá en Supabase SQL Editor: ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_body_check; ALTER TABLE posts ADD CONSTRAINT posts_body_check CHECK (char_length(body) >= 1 AND char_length(body) <= 1000);"
+          )
+      );
+    }
+    redirect("/?error=" + encodeURIComponent(`No se pudo publicar: ${error.message}`));
   }
 
   revalidatePath("/");
