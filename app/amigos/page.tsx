@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { acceptFriendshipAction, removeFriendshipAction } from "./actions";
+import { addFriendToTopAction } from "@/app/actions/topFriends";
 
 export const metadata = { title: "Mis amigos - Kontakt" };
 
@@ -84,6 +85,13 @@ export default async function AmigosPage() {
     };
   });
 
+  const { data: topFriendsData } = await supabase
+    .from("top_friends")
+    .select("friend_id")
+    .eq("user_id", user.id);
+
+  const topFriendIds = new Set((topFriendsData || []).map((t) => t.friend_id));
+
   const solicitudesRecibidas = recibidasData || [];
   const solicitudesEnviadas = enviadasData || [];
 
@@ -95,11 +103,15 @@ export default async function AmigosPage() {
           <h2>Amigos en Kontakt</h2>
           <div className="box-body">
             <p><strong>Total de amigos:</strong> {amigos.length}</p>
-            <p>
-              <Link className="btn" href="/buscar" style={{ display: "block", textAlign: "center" }}>
+            <p><strong>Top 8 favoritos:</strong> {topFriendIds.size}/8</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+              <Link className="btn" href="/amigos/top" style={{ textAlign: "center" }}>
+                ★ Editar mi Top 8
+              </Link>
+              <Link className="btn" href="/buscar" style={{ textAlign: "center" }}>
                 🔍 Buscar más personas
               </Link>
-            </p>
+            </div>
           </div>
         </div>
 
@@ -220,6 +232,7 @@ export default async function AmigosPage() {
               >
                 {amigos.map((amigo: any) => {
                   const inicial = amigo?.display_name?.charAt(0) || amigo?.username?.charAt(0) || "?";
+                  const esTop = topFriendIds.has(amigo.id);
 
                   return (
                     <div
@@ -258,21 +271,41 @@ export default async function AmigosPage() {
                         </p>
                       )}
 
-                      <div style={{ marginTop: "auto", display: "flex", gap: 6, alignItems: "center" }}>
-                        <Link className="btn" href={`/u/${amigo?.username}`} style={{ fontSize: 10, padding: "2px 8px" }}>
-                          Ver muro
-                        </Link>
-                        <form action={removeFriendshipAction}>
-                          <input type="hidden" name="friendship_id" value={amigo.friendshipId} />
+                      <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
+                        <form action={addFriendToTopAction} style={{ width: "100%" }}>
+                          <input type="hidden" name="friend_id" value={amigo.id} />
+                          <input type="hidden" name="return_path" value="/amigos" />
                           <button
                             type="submit"
                             className="mini"
-                            title="Eliminar de mi lista de amigos"
-                            style={{ fontSize: 10 }}
+                            style={{
+                              width: "100%",
+                              fontSize: 10,
+                              background: esTop ? "linear-gradient(#f7e1b5, #e0be75)" : undefined,
+                              borderColor: esTop ? "#c49f48" : undefined,
+                              color: esTop ? "#4a3500" : undefined,
+                            }}
                           >
-                            Eliminar
+                            {esTop ? "★ En tu Top 8" : "☆ Añadir a Top 8"}
                           </button>
                         </form>
+
+                        <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+                          <Link className="btn" href={`/u/${amigo?.username}`} style={{ fontSize: 10, padding: "2px 8px", flex: 1 }}>
+                            Ver perfil
+                          </Link>
+                          <form action={removeFriendshipAction}>
+                            <input type="hidden" name="friendship_id" value={amigo.friendshipId} />
+                            <button
+                              type="submit"
+                              className="mini"
+                              title="Eliminar de mi lista de amigos"
+                              style={{ fontSize: 10 }}
+                            >
+                              ✕
+                            </button>
+                          </form>
+                        </div>
                       </div>
                     </div>
                   );

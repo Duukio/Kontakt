@@ -12,6 +12,7 @@ import PostPublisher from "@/app/components/PostPublisher";
 import PostContent from "@/app/components/PostContent";
 import PostCard from "@/app/components/PostCard";
 import { submitTestimonialAction, deleteTestimonialAction } from "@/app/actions/testimonials";
+import { addFriendToTopAction } from "@/app/actions/topFriends";
 
 export async function generateMetadata({
   params,
@@ -95,6 +96,18 @@ export default async function PerfilUsuario({
       )
       .maybeSingle();
     amistad = data;
+  }
+
+  // Verificar si este usuario ya está en el Top 8 del usuario logueado
+  let estaEnMiTop8 = false;
+  if (user && !esPropio) {
+    const { data: topCheck } = await supabase
+      .from("top_friends")
+      .select("position")
+      .eq("user_id", user.id)
+      .eq("friend_id", profile.id)
+      .maybeSingle();
+    estaEnMiTop8 = Boolean(topCheck);
   }
 
   // Obtener Top 8 Amigos del perfil
@@ -259,7 +272,26 @@ export default async function PerfilUsuario({
 
                   {amistad && amistad.status === "accepted" && (
                     <div>
-                      <p style={{ color: "green", fontWeight: "bold" }}>✓ Son amigos</p>
+                      <p style={{ color: "green", fontWeight: "bold", margin: "4px 0" }}>✓ Son amigos</p>
+                      
+                      {/* Botón para Añadir o Quitar del Top 8 */}
+                      <form action={addFriendToTopAction} style={{ marginBottom: 6 }}>
+                        <input type="hidden" name="friend_id" value={profile.id} />
+                        <input type="hidden" name="return_path" value={`/u/${profile.username}`} />
+                        <button
+                          type="submit"
+                          className="btn"
+                          style={{
+                            width: "100%",
+                            background: estaEnMiTop8 ? "linear-gradient(#f7e1b5, #e0be75)" : undefined,
+                            borderColor: estaEnMiTop8 ? "#c49f48" : undefined,
+                            color: estaEnMiTop8 ? "#4a3500" : undefined,
+                          }}
+                        >
+                          {estaEnMiTop8 ? "★ Quitar de mi Top 8" : "★ Añadir a mi Top 8"}
+                        </button>
+                      </form>
+
                       <form action={removeFriendship}>
                         <input type="hidden" name="friendship_id" value={amistad.id} />
                         <input type="hidden" name="username" value={profile.username} />
