@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createFeedPost, deleteFeedPost } from "@/app/feed/actions";
 import PostPublisher from "@/app/components/PostPublisher";
 import PostCard from "@/app/components/PostCard";
+import OnlineFriendsWidget from "@/app/components/OnlineFriendsWidget";
 
 export default async function Home({
   searchParams,
@@ -38,17 +39,17 @@ export default async function Home({
     );
     const idsFeed = [user.id, ...amigosIds];
 
-    // Obtener amigos conectados recientemente (últimos 15 minutos)
-    const quinceMinutosAtras = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    // Obtener amigos conectados recientemente (últimos 4 minutos)
+    const cuatroMinutosAtras = new Date(Date.now() - 4 * 60 * 1000).toISOString();
     let amigosOnline: { id: string; username: string; display_name: string | null; avatar_url: string | null; last_seen_at: string | null }[] = [];
     if (amigosIds.length > 0) {
       const { data: onlineData } = await supabase
         .from("profiles")
         .select("id, username, display_name, avatar_url, last_seen_at")
         .in("id", amigosIds)
-        .gte("last_seen_at", quinceMinutosAtras)
+        .gte("last_seen_at", cuatroMinutosAtras)
         .order("last_seen_at", { ascending: false })
-        .limit(6);
+        .limit(8);
       amigosOnline = onlineData ?? [];
     }
 
@@ -157,53 +158,11 @@ export default async function Home({
             </div>
           </div>
 
-          {/* Amigos En Línea*/}
-          <div className="box">
-            <h2>🟢 En línea ahora ({amigosOnline.length})</h2>
-            <div className="box-body" style={{ fontSize: 11 }}>
-              {amigosOnline.length === 0 ? (
-                <div style={{ color: "#777", fontStyle: "italic" }}>
-                  Ningún amigo conectado en este momento.
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {amigosOnline.map((a) => (
-                    <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      {a.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={a.avatar_url}
-                          alt={a.username}
-                          style={{ width: 22, height: 22, objectFit: "cover", border: "1px solid #7f9db9" }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: 22,
-                            height: 22,
-                            background: "#cfdcf5",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 10,
-                            fontWeight: "bold",
-                            border: "1px solid #7f9db9",
-                          }}
-                        >
-                          {(a.display_name || a.username)[0].toUpperCase()}
-                        </div>
-                      )}
-                      <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        <Link href={`/u/${a.username}`} style={{ fontWeight: "bold" }}>
-                          {a.display_name || a.username}
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Amigos En Línea (Widget interactivo en tiempo real) */}
+          <OnlineFriendsWidget
+            initialFriends={amigosOnline}
+            amigosIds={amigosIds}
+          />
         </div>
 
         {/* Columna Principal: Publicador y Feed */}

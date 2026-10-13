@@ -206,6 +206,16 @@ export default async function PerfilUsuario({
             <h3 className="perfil-nombre">{profile.display_name}</h3>
             <p className="perfil-usuario">@{profile.username}</p>
 
+            {/* Estado de conexión */}
+            <div style={{ fontSize: 10, margin: "4px 0 8px" }}>
+              {profile.last_seen_at &&
+              new Date().getTime() - new Date(profile.last_seen_at).getTime() < 4 * 60 * 1000 ? (
+                <span style={{ color: "#2e7d32", fontWeight: "bold" }}>🟢 En línea ahora</span>
+              ) : (
+                <span style={{ color: "#777" }}>⚪ Desconectado</span>
+              )}
+            </div>
+
             <div style={{ marginTop: 10 }}>
               {esPropio ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

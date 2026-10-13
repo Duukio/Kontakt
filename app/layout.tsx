@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "@/app/auth/actions";
+import HeartbeatTracker from "@/app/components/HeartbeatTracker";
 
 export default async function RootLayout({
   children,
@@ -88,6 +89,8 @@ export default async function RootLayout({
               </>
             )}
           </ul>
+
+          {user && <HeartbeatTracker userId={user.id} />}
 
           <div id="content">{children}</div>
 
