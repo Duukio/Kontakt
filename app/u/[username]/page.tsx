@@ -367,7 +367,7 @@ export default async function PerfilUsuario({
           </div>
         )}
 
-        {/* Top 8 Amigos (Estilo MySpace) */}
+        {/* Top 8 Amigos*/}
         <div className="box">
           <div
             style={{

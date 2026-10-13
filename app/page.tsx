@@ -157,7 +157,7 @@ export default async function Home({
             </div>
           </div>
 
-          {/* Amigos En Línea (estilo MSN Messenger / 2004) */}
+          {/* Amigos En Línea*/}
           <div className="box">
             <h2>🟢 En línea ahora ({amigosOnline.length})</h2>
             <div className="box-body" style={{ fontSize: 11 }}>

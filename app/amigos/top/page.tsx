@@ -59,7 +59,7 @@ export default async function TopAmigosPage() {
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
       <div className="box">
-        <h2>★ Configurar mis Top 8 Amigos (Estilo MySpace)</h2>
+        <h2>★ Configurar mis Top 8 Amigos</h2>
         <div className="box-body">
           <p style={{ fontSize: 11, color: "#444", marginBottom: 12 }}>
             Elegí a tus 8 mejores amigos para que aparezcan destacados en tu perfil público en una cuadrícula retro de 2x4.
