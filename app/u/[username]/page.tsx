@@ -462,7 +462,7 @@ export default async function PerfilUsuario({
           </div>
         </div>
 
-        {/* Testimonios y Libro de visitas (Estilo Orkut) */}
+        {/* Testimonios y Libro de visitas*/}
         <div className="box">
           <h2>💌 Libro de Visitas &amp; Testimonios ({testimonials.length})</h2>
           <div className="box-body">

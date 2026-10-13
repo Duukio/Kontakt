@@ -21,7 +21,7 @@ export default async function CrearComunidadPage({
   return (
     <div style={{ maxWidth: 600, margin: "0 auto" }}>
       <div className="box">
-        <h2>Crear una nueva Comunidad (Estilo Orkut)</h2>
+        <h2>Crear una nueva Comunidad</h2>
         <div className="box-body">
           {error && <div className="msg-error">{error}</div>}
 
