@@ -187,9 +187,9 @@ export default async function FotosPage({
           </div>
         ) : (
           <div className="box">
-            <h2>Fotolog</h2>
+            <h2>Fotos</h2>
             <div className="box-body" style={{ textAlign: "center", padding: "30px 0" }}>
-              <p>Todavía no hay fotos publicadas en este Fotolog.</p>
+              <p>Todavía no hay fotos publicadas en este Album de Fotos.</p>
             </div>
           </div>
         )}

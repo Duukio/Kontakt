@@ -55,7 +55,7 @@ export default function PhotoUploader({ userId }: { userId: string }) {
     <form action={uploadPhotoAction}>
       <input type="hidden" name="url" value={url} />
 
-      <label>Elegir foto para tu Fotolog:</label>
+      <label>Elegir foto para tu Album de Fotos:</label>
       <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
         <button
           type="button"
