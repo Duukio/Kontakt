@@ -69,10 +69,10 @@ export default async function RootLayout({
                 </li>
                 <li>
                   <Link href="/notificaciones">
-                    Novedades {notifsCount > 0 && <span style={{ color: "#c00", fontWeight: "bold" }}>({notifsCount})</span>}
+                    Notificaciones {notifsCount > 0 && <span style={{ color: "#c00", fontWeight: "bold" }}>({notifsCount})</span>}
                   </Link>
                 </li>
-                <li><Link href="/fotos">Fotolog</Link></li>
+                <li><Link href="/fotos">Fotos</Link></li>
                 <li><Link href="/comunidades">Comunidades</Link></li>
                 <li><Link href="/buscar">Buscar</Link></li>
                 <li className="nav-right">

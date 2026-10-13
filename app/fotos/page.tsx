@@ -79,7 +79,7 @@ export default async function FotosPage({
       {/* Columna lateral: Datos del Fotolog y subida */}
       <div className="col-side">
         <div className="box">
-          <h2>Fotolog 2004</h2>
+          <h2>Fotos</h2>
           <div className="box-body">
             {targetProfile ? (
               <div style={{ textAlign: "center" }}>
@@ -93,7 +93,7 @@ export default async function FotosPage({
                 {!esMiFotolog && user && (
                   <p>
                     <Link className="btn" href="/fotos">
-                      Ver mi propio Fotolog
+                      Ver mis fotos
                     </Link>
                   </p>
                 )}

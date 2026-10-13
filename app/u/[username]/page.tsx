@@ -202,7 +202,7 @@ export default async function PerfilUsuario({
                     href={`/fotos?u=${profile.username}`}
                     style={{ display: "block", textAlign: "center" }}
                   >
-                    📸 Mi Fotolog
+                    📸 Mi Fotos
                   </Link>
                 </div>
               ) : user ? (
@@ -213,7 +213,7 @@ export default async function PerfilUsuario({
                       href={`/fotos?u=${profile.username}`}
                       style={{ display: "block", textAlign: "center", padding: "2px 6px" }}
                     >
-                      📸 Ver Fotolog
+                      📸 Ver Fotos
                     </Link>
                   </div>
                   {!amistad && (

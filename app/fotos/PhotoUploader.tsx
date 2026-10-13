@@ -118,7 +118,7 @@ export default function PhotoUploader({ userId }: { userId: string }) {
 
       <p style={{ marginTop: 10 }}>
         <button type="submit" disabled={!url || subiendo}>
-          📸 Publicar en mi Fotolog
+          Publicar en mis Fotos
         </button>
       </p>
     </form>
