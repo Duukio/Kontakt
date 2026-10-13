@@ -3,14 +3,16 @@ import { login } from "@/app/auth/actions";
 import { createClient } from "@/lib/supabase/server";
 import { createFeedPost, deleteFeedPost } from "@/app/feed/actions";
 import PostPublisher from "@/app/components/PostPublisher";
-import PostContent from "@/app/components/PostContent";
+import PostCard from "@/app/components/PostCard";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams?: Promise<{ filtro?: string; error?: string; ok?: string }>;
+  searchParams?: Promise<{ filtro?: string; p?: string; error?: string; ok?: string }>;
 }) {
-  const { filtro = "amigos", error, ok } = (await searchParams) ?? {};
+  const { filtro = "amigos", p = "1", error, ok } = (await searchParams) ?? {};
+  const pagina = Math.max(1, parseInt(p, 10) || 1);
+  const limit = 15;
 
   const supabase = await createClient();
   const {
@@ -35,6 +37,20 @@ export default async function Home({
       f.requester_id === user.id ? f.addressee_id : f.requester_id
     );
     const idsFeed = [user.id, ...amigosIds];
+
+    // Obtener amigos conectados recientemente (últimos 15 minutos)
+    const quinceMinutosAtras = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    let amigosOnline: { id: string; username: string; display_name: string | null; avatar_url: string | null; last_seen_at: string | null }[] = [];
+    if (amigosIds.length > 0) {
+      const { data: onlineData } = await supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url, last_seen_at")
+        .in("id", amigosIds)
+        .gte("last_seen_at", quinceMinutosAtras)
+        .order("last_seen_at", { ascending: false })
+        .limit(6);
+      amigosOnline = onlineData ?? [];
+    }
 
     // Cantidad de solicitudes pendientes para avisarle en la barra lateral
     const { count: solicitudesCount } = await supabase
@@ -68,10 +84,18 @@ export default async function Home({
           id,
           username,
           display_name
+        ),
+        likes:likes (user_id),
+        comments:comments (
+          id,
+          author_id,
+          body,
+          created_at,
+          author:author_id (id, username, display_name, avatar_url)
         )
       `)
       .order("created_at", { ascending: false })
-      .limit(30);
+      .range((pagina - 1) * limit, pagina * limit - 1);
 
     if (filtro !== "todos") {
       query = query.in("author_id", idsFeed);
@@ -130,6 +154,54 @@ export default async function Home({
                   </li>
                 )}
               </ul>
+            </div>
+          </div>
+
+          {/* Amigos En Línea (estilo MSN Messenger / 2004) */}
+          <div className="box">
+            <h2>🟢 En línea ahora ({amigosOnline.length})</h2>
+            <div className="box-body" style={{ fontSize: 11 }}>
+              {amigosOnline.length === 0 ? (
+                <div style={{ color: "#777", fontStyle: "italic" }}>
+                  Ningún amigo conectado en este momento.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {amigosOnline.map((a) => (
+                    <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {a.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={a.avatar_url}
+                          alt={a.username}
+                          style={{ width: 22, height: 22, objectFit: "cover", border: "1px solid #7f9db9" }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 22,
+                            height: 22,
+                            background: "#cfdcf5",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 10,
+                            fontWeight: "bold",
+                            border: "1px solid #7f9db9",
+                          }}
+                        >
+                          {(a.display_name || a.username)[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <Link href={`/u/${a.username}`} style={{ fontWeight: "bold" }}>
+                          {a.display_name || a.username}
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -215,88 +287,49 @@ export default async function Home({
                   )}
                 </div>
               ) : (
-                listaPosts.map((post: any) => {
-                  const autor = Array.isArray(post.author) ? post.author[0] : post.author;
-                  const destinatario = Array.isArray(post.wall_owner) ? post.wall_owner[0] : post.wall_owner;
-                  const inicialAutor = autor?.display_name?.charAt(0) || autor?.username?.charAt(0) || "?";
-                  const fecha = new Date(post.created_at).toLocaleString("es-AR", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  });
-                  const esMuroAjeno = post.wall_owner_id && post.wall_owner_id !== post.author_id && destinatario;
-                  const puedeBorrar = user.id === post.author_id;
+                <>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    {listaPosts.map((post: any) => (
+                      <PostCard
+                        key={post.id}
+                        post={post}
+                        currentUserId={user.id}
+                        path={`/?filtro=${filtro}&p=${pagina}`}
+                        onDeletePostAction={deleteFeedPost}
+                      />
+                    ))}
+                  </div>
 
-                  return (
-                    <div
-                      key={post.id}
-                      className="post"
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        alignItems: "flex-start",
-                        padding: "10px 0",
-                      }}
-                    >
-                      <div className="avatar" style={{ width: 44, height: 44, fontSize: 20, flexShrink: 0 }}>
-                        {autor?.avatar_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={autor.avatar_url} alt="" />
-                        ) : (
-                          inicialAutor
-                        )}
-                      </div>
+                  {/* Paginación */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: 14,
+                      paddingTop: 8,
+                      borderTop: "1px dotted var(--borde)",
+                    }}
+                  >
+                    {pagina > 1 ? (
+                      <Link className="btn" href={`/?filtro=${filtro}&p=${pagina - 1}`}>
+                        « Anterior
+                      </Link>
+                    ) : (
+                      <span />
+                    )}
 
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          className="post-meta"
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <span>
-                            <strong>
-                              <Link href={`/u/${autor?.username}`}>
-                                {autor?.display_name ?? autor?.username ?? "Usuario"}
-                              </Link>
-                            </strong>
-                            {esMuroAjeno && (
-                              <>
-                                {" "}➔{" "}
-                                <strong>
-                                  <Link href={`/u/${destinatario?.username}`}>
-                                    {destinatario?.display_name ?? destinatario?.username}
-                                  </Link>
-                                </strong>
-                              </>
-                            )}
-                            {" "}• <span style={{ color: "#777" }}>{fecha}</span>
-                          </span>
+                    <span style={{ fontSize: 10, color: "#666" }}>Página {pagina}</span>
 
-                          {puedeBorrar && (
-                            <form action={deleteFeedPost}>
-                              <input type="hidden" name="post_id" value={post.id} />
-                              <button type="submit" className="mini">
-                                Borrar
-                              </button>
-                            </form>
-                          )}
-                        </div>
-
-                        <div
-                          className="post-body"
-                          style={{
-                            marginTop: 4,
-                            fontSize: 12,
-                          }}
-                        >
-                          <PostContent text={post.body} />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
+                    {listaPosts.length === limit ? (
+                      <Link className="btn" href={`/?filtro=${filtro}&p=${pagina + 1}`}>
+                        Siguiente »
+                      </Link>
+                    ) : (
+                      <span />
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </div>

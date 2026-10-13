@@ -21,14 +21,27 @@ export default async function RootLayout({
   } = await supabase.auth.getUser();
 
   let noLeidos = 0;
+  let notifsCount = 0;
   if (user) {
-    const { count } = await supabase
-      .from("messages")
-      .select("*", { count: "exact", head: true })
-      .eq("recipient_id", user.id)
-      .eq("deleted_by_recipient", false)
-      .is("read_at", null);
-    noLeidos = count ?? 0;
+    const [msgRes, notifRes] = await Promise.all([
+      supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("recipient_id", user.id)
+        .eq("deleted_by_recipient", false)
+        .is("read_at", null),
+      supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("read_at", null),
+      supabase
+        .from("profiles")
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq("id", user.id),
+    ]);
+    noLeidos = msgRes.count ?? 0;
+    notifsCount = notifRes.count ?? 0;
   }
 
   return (
@@ -54,6 +67,13 @@ export default async function RootLayout({
                     Mensajes {noLeidos > 0 && <span style={{ color: "#c00", fontWeight: "bold" }}>({noLeidos})</span>}
                   </Link>
                 </li>
+                <li>
+                  <Link href="/notificaciones">
+                    Novedades {notifsCount > 0 && <span style={{ color: "#c00", fontWeight: "bold" }}>({notifsCount})</span>}
+                  </Link>
+                </li>
+                <li><Link href="/fotos">Fotolog</Link></li>
+                <li><Link href="/comunidades">Comunidades</Link></li>
                 <li><Link href="/buscar">Buscar</Link></li>
                 <li className="nav-right">
                   <form action={logout}>

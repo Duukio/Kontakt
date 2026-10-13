@@ -22,6 +22,7 @@ export async function updateProfile(formData: FormData) {
   const location = String(formData.get("location") ?? "").trim();
   const interests = String(formData.get("interests") ?? "").trim();
   const relacion = String(formData.get("relationship_status") ?? "");
+  const profileSongUrl = String(formData.get("profile_song_url") ?? "").trim();
   const customCss = String(formData.get("custom_css") ?? "").trim();
 
   if (displayName.length < 1 || displayName.length > 40) {
@@ -45,6 +46,7 @@ export async function updateProfile(formData: FormData) {
       location: location || null,
       interests: interests || null,
       relationship_status: relacion || null,
+      profile_song_url: profileSongUrl || null,
       custom_css: customCss || null,
     })
     .eq("id", user.id)
@@ -55,3 +57,20 @@ export async function updateProfile(formData: FormData) {
 
   redirect(`/u/${perfil.username}`);
 }
+
+export async function deleteAccount() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  // Eliminar perfil público (esto cascada posts, comentarios, fotos, etc.)
+  await supabase.from("profiles").delete().eq("id", user.id);
+
+  // Cerrar sesión
+  await supabase.auth.signOut();
+
+  redirect("/ingresar?ok=" + encodeURIComponent("Tu cuenta ha sido eliminada correctamente. ¡Hasta siempre!"));
+}
+

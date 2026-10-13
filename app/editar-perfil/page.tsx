@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { updateProfile } from "./actions";
+import { updateProfile, deleteAccount } from "./actions";
 import AvatarUploader from "./AvatarUploader";
 import BannerUploader from "./BannerUploader";
 
@@ -104,6 +104,18 @@ export default async function EditarPerfil({
                 defaultValue={profile.interests ?? ""}
               />
 
+              <label htmlFor="profile_song_url">🎵 Canción de tu perfil (link de YouTube o audio):</label>
+              <input
+                type="url"
+                id="profile_song_url"
+                name="profile_song_url"
+                defaultValue={profile.profile_song_url ?? ""}
+                placeholder="https://www.youtube.com/watch?v=... o archivo mp3"
+              />
+              <p className="ayuda">
+                Se mostrará en la sección &quot;Ahora estoy escuchando&quot; con reproductor en tu perfil.
+              </p>
+
               <label htmlFor="custom_css">CSS personalizado:</label>
               <textarea
                 id="custom_css"
@@ -122,6 +134,33 @@ export default async function EditarPerfil({
                 <button type="submit">Guardar cambios</button>{" "}
                 <Link href={`/u/${profile.username}`}>Cancelar</Link>
               </p>
+            </form>
+          </div>
+        </div>
+
+        {/* Zona de peligro: Borrar cuenta */}
+        <div className="box" style={{ marginTop: 16, borderColor: "#d9534f" }}>
+          <h2 style={{ background: "linear-gradient(#f2dede, #ebccd1)", color: "#a94442", borderColor: "#ebccd1" }}>
+            ⚠️ Zona de peligro: Borrar mi cuenta
+          </h2>
+          <div className="box-body" style={{ background: "#fffaf9" }}>
+            <p style={{ fontSize: 11, color: "#a94442", margin: "0 0 8px 0" }}>
+              Si borras tu cuenta de Kontakt, se eliminarán permanentemente tu perfil, publicaciones, fotos, comentarios y mensajes. Esta acción no se puede deshacer.
+            </p>
+            <form action={deleteAccount}>
+              <button
+                type="submit"
+                style={{
+                  background: "#d9534f",
+                  borderColor: "#d43f3a",
+                  color: "#fff",
+                  fontSize: 11,
+                  padding: "4px 10px",
+                  cursor: "pointer",
+                }}
+              >
+                Eliminar mi cuenta definitivamente
+              </button>
             </form>
           </div>
         </div>

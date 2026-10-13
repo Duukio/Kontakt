@@ -1,4 +1,5 @@
 import React from "react";
+import { parseEmoticons } from "@/lib/emoticons";
 
 const URL_REGEX = /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/gi;
 
@@ -103,7 +104,7 @@ export default function PostContent({ text }: { text: string }) {
               </a>
             );
           }
-          return <React.Fragment key={index}>{part}</React.Fragment>;
+          return <React.Fragment key={index}>{parseEmoticons(part)}</React.Fragment>;
         })}
       </div>
 

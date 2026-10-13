@@ -10,6 +10,9 @@ import {
 } from "./actions";
 import PostPublisher from "@/app/components/PostPublisher";
 import PostContent from "@/app/components/PostContent";
+import PostCard from "@/app/components/PostCard";
+import { sendPokeAction } from "@/app/actions/social";
+import { submitTestimonialAction, deleteTestimonialAction } from "@/app/actions/testimonials";
 
 export async function generateMetadata({
   params,
@@ -50,7 +53,7 @@ export default async function PerfilUsuario({
 
   const esPropio = user?.id === profile.id;
 
-  // Obtener posts del muro
+  // Obtener posts del muro con likes y comentarios
   const { data: posts } = await supabase
     .from("posts")
     .select(`
@@ -58,10 +61,25 @@ export default async function PerfilUsuario({
       body,
       created_at,
       author_id,
-      profiles:author_id (
+      wall_owner_id,
+      author:author_id (
+        id,
         username,
         display_name,
         avatar_url
+      ),
+      wall_owner:wall_owner_id (
+        id,
+        username,
+        display_name
+      ),
+      likes:likes (user_id),
+      comments:comments (
+        id,
+        author_id,
+        body,
+        created_at,
+        author:author_id (id, username, display_name, avatar_url)
       )
     `)
     .eq("wall_owner_id", profile.id)
@@ -79,6 +97,49 @@ export default async function PerfilUsuario({
       .maybeSingle();
     amistad = data;
   }
+
+  // Obtener Top 8 Amigos del perfil
+  const { data: topFriendsData } = await supabase
+    .from("top_friends")
+    .select(`
+      position,
+      friend:friend_id (
+        id,
+        username,
+        display_name,
+        avatar_url
+      )
+    `)
+    .eq("user_id", profile.id)
+    .order("position", { ascending: true });
+
+  const topFriends = (topFriendsData || []).map((t: any) => ({
+    position: t.position,
+    friend: Array.isArray(t.friend) ? t.friend[0] : t.friend,
+  }));
+
+  // Obtener testimonios/libro de visitas
+  const { data: testimonialsData } = await supabase
+    .from("testimonials")
+    .select(`
+      id,
+      body,
+      created_at,
+      author_id,
+      author:author_id (
+        id,
+        username,
+        display_name,
+        avatar_url
+      )
+    `)
+    .eq("recipient_id", profile.id)
+    .order("created_at", { ascending: false });
+
+  const testimonials = (testimonialsData || []).map((t: any) => ({
+    ...t,
+    author: Array.isArray(t.author) ? t.author[0] : t.author,
+  }));
 
   const inicial = profile.display_name?.charAt(0) || profile.username.charAt(0);
 
@@ -132,11 +193,29 @@ export default async function PerfilUsuario({
 
             <div style={{ marginTop: 10 }}>
               {esPropio ? (
-                <Link className="btn" href="/editar-perfil" style={{ display: "block" }}>
-                  Editar mi perfil
-                </Link>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <Link className="btn" href="/editar-perfil" style={{ display: "block" }}>
+                    Editar mi perfil
+                  </Link>
+                  <Link
+                    className="btn"
+                    href={`/fotos?u=${profile.username}`}
+                    style={{ display: "block", textAlign: "center" }}
+                  >
+                    📸 Mi Fotolog
+                  </Link>
+                </div>
               ) : user ? (
                 <div>
+                  <div style={{ marginBottom: 8 }}>
+                    <Link
+                      className="btn"
+                      href={`/fotos?u=${profile.username}`}
+                      style={{ display: "block", textAlign: "center", padding: "2px 6px" }}
+                    >
+                      📸 Ver Fotolog
+                    </Link>
+                  </div>
                   {!amistad && (
                     <form action={sendFriendRequest}>
                       <input type="hidden" name="to" value={profile.id} />
@@ -196,11 +275,33 @@ export default async function PerfilUsuario({
                       ✉️ Enviar mensaje
                     </Link>
                   </div>
+
+                  <form action={sendPokeAction} style={{ marginTop: 6 }}>
+                    <input type="hidden" name="to_id" value={profile.id} />
+                    <input type="hidden" name="path" value={`/u/${profile.username}`} />
+                    <button
+                      type="submit"
+                      className="mini"
+                      style={{ width: "100%", textAlign: "center" }}
+                    >
+                      👉 Dar toque / Zumbido
+                    </button>
+                  </form>
                 </div>
               ) : null}
             </div>
           </div>
         </div>
+
+        {/* Ahora estoy escuchando (Música retro de perfil) */}
+        {profile.profile_song_url && (
+          <div className="box">
+            <h2>🎵 Escuchando</h2>
+            <div className="box-body" style={{ textAlign: "center" }}>
+              <PostContent text={profile.profile_song_url} />
+            </div>
+          </div>
+        )}
 
         {/* Información personal */}
         <div className="box">
@@ -244,6 +345,187 @@ export default async function PerfilUsuario({
           </div>
         )}
 
+        {/* Top 8 Amigos (Estilo MySpace) */}
+        <div className="box">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "linear-gradient(#6da8ee, var(--azul))",
+              padding: "4px 8px",
+              borderBottom: "1px solid var(--azul-osc)",
+            }}
+          >
+            <h2 style={{ margin: 0, padding: 0, background: "none", border: 0, color: "#fff" }}>
+              ★ Top 8 Amigos de {profile.display_name}
+            </h2>
+            {esPropio && (
+              <Link href="/amigos/top" style={{ fontSize: 10, color: "#fff", textDecoration: "underline" }}>
+                [Editar Top 8]
+              </Link>
+            )}
+          </div>
+          <div className="box-body">
+            {topFriends.length === 0 ? (
+              <div style={{ color: "#777", fontSize: 11, fontStyle: "italic" }}>
+                {esPropio ? (
+                  <span>
+                    No seleccionaste a tus 8 mejores amigos aún.{" "}
+                    <Link href="/amigos/top">¡Hacé clic acá para elegirlos!</Link>
+                  </span>
+                ) : (
+                  <span>Este usuario no ha configurado sus Top 8 amigos todavía.</span>
+                )}
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: 8,
+                  textAlign: "center",
+                }}
+              >
+                {topFriends.map((tf: any) => {
+                  const f = tf.friend;
+                  if (!f) return null;
+                  const fInicial = f.display_name?.[0] || f.username?.[0] || "?";
+                  return (
+                    <div
+                      key={tf.position}
+                      style={{
+                        background: "#f9fbfe",
+                        border: "1px solid #d0ddec",
+                        padding: 6,
+                        borderRadius: 2,
+                      }}
+                    >
+                      <Link href={`/u/${f.username}`} style={{ textDecoration: "none", color: "inherit" }}>
+                        <div
+                          className="avatar"
+                          style={{
+                            width: 50,
+                            height: 50,
+                            margin: "0 auto 4px",
+                            fontSize: 18,
+                            border: "1px solid #7f9db9",
+                          }}
+                        >
+                          {f.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={f.avatar_url} alt="" />
+                          ) : (
+                            fInicial
+                          )}
+                        </div>
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            fontSize: 11,
+                            color: "var(--azul-osc)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {f.display_name || f.username}
+                        </div>
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Testimonios y Libro de visitas (Estilo Orkut) */}
+        <div className="box">
+          <h2>💌 Libro de Visitas &amp; Testimonios ({testimonials.length})</h2>
+          <div className="box-body">
+            {/* Formulario para dejar testimonio */}
+            {user && !esPropio ? (
+              <form action={submitTestimonialAction} style={{ marginBottom: 14 }}>
+                <input type="hidden" name="recipient_id" value={profile.id} />
+                <input type="hidden" name="recipient_username" value={profile.username} />
+                <textarea
+                  name="body"
+                  rows={3}
+                  maxLength={1500}
+                  required
+                  placeholder={`Escribile un testimonio de amistad o dedicatoria a ${profile.display_name}...`}
+                  style={{ width: "100%", fontSize: 11, marginBottom: 4 }}
+                />
+                <button type="submit" className="mini">
+                  💌 Dejar testimonio
+                </button>
+              </form>
+            ) : null}
+
+            {testimonials.length === 0 ? (
+              <div style={{ color: "#777", fontSize: 11, fontStyle: "italic" }}>
+                Aún no hay testimonios en este perfil.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {testimonials.map((t: any) => (
+                  <div
+                    key={t.id}
+                    style={{
+                      background: "#fffdf0",
+                      border: "1px solid #f0e7be",
+                      padding: 8,
+                      borderRadius: 2,
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div className="avatar" style={{ width: 26, height: 26, fontSize: 12 }}>
+                          {t.author?.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={t.author.avatar_url} alt="" />
+                          ) : (
+                            t.author?.display_name?.[0] || t.author?.username?.[0] || "?"
+                          )}
+                        </div>
+                        <Link href={`/u/${t.author?.username}`} style={{ fontWeight: "bold", fontSize: 11 }}>
+                          {t.author?.display_name || t.author?.username}
+                        </Link>
+                      </div>
+                      <div style={{ fontSize: 10, color: "#888" }}>
+                        {new Date(t.created_at).toLocaleDateString()}
+                        {(user?.id === t.author_id || esPropio) && (
+                          <form action={deleteTestimonialAction} style={{ display: "inline", marginLeft: 8 }}>
+                            <input type="hidden" name="testimonial_id" value={t.id} />
+                            <input type="hidden" name="username" value={profile.username} />
+                            <button
+                              type="submit"
+                              style={{
+                                background: "none",
+                                border: 0,
+                                color: "#c00",
+                                fontSize: 10,
+                                cursor: "pointer",
+                                padding: 0,
+                              }}
+                            >
+                              [borrar]
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11, lineHeight: 1.4 }}>
+                      <PostContent text={t.body} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Muro */}
         <div className="box">
           <h2>Muro de {profile.display_name}</h2>
@@ -273,39 +555,18 @@ export default async function PerfilUsuario({
               {!posts || posts.length === 0 ? (
                 <p style={{ color: "#666" }}>Todavía no hay publicaciones en este muro.</p>
               ) : (
-                posts.map((post: any) => {
-                  const autor = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
-                  const fecha = new Date(post.created_at).toLocaleString("es-AR", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  });
-                  const puedeBorrar = user && (user.id === post.author_id || user.id === profile.id);
-
-                  return (
-                    <div key={post.id} className="post">
-                      <div className="post-meta" style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>
-                          <strong>
-                            <Link href={`/u/${autor?.username}`}>
-                              {autor?.display_name ?? autor?.username ?? "Usuario"}
-                            </Link>
-                          </strong>{" "}
-                          escribió el {fecha}:
-                        </span>
-                        {puedeBorrar && (
-                          <form action={deletePost}>
-                            <input type="hidden" name="post_id" value={post.id} />
-                            <input type="hidden" name="username" value={profile.username} />
-                            <button type="submit" className="mini">Borrar</button>
-                          </form>
-                        )}
-                      </div>
-                      <div className="post-body">
-                        <PostContent text={post.body} />
-                      </div>
-                    </div>
-                  );
-                })
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {posts.map((post: any) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      currentUserId={user?.id}
+                      path={`/u/${profile.username}`}
+                      onDeletePostAction={deletePost}
+                      deletePostExtraFields={[{ name: "username", value: profile.username }]}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           </div>

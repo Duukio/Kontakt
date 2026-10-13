@@ -25,6 +25,10 @@ export default async function Ingresar({
               <label htmlFor="password">Contraseña:</label>
               <input type="password" id="password" name="password" required />
 
+              <div style={{ marginTop: 6, fontSize: 10 }}>
+                <Link href="/recuperar">¿Olvidaste tu contraseña?</Link>
+              </div>
+
               <p style={{ marginTop: 10 }}>
                 <button type="submit">Ingresar</button>
               </p>
