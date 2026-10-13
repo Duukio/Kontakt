@@ -370,7 +370,7 @@ export default async function Home({
               <li>Crear tu perfil y personalizarlo a tu gusto</li>
               <li>Agregar amigos y escribir en sus muros</li>
               <li>Compartir tu estado y tus fotos</li>
-              <li>Mandar mensajes y toques</li>
+              <li>Mandar mensajes privados</li>
             </ul>
             <p>
               <Link className="btn" href="/registro">¡Registrate gratis!</Link>

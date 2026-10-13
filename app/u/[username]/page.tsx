@@ -11,7 +11,6 @@ import {
 import PostPublisher from "@/app/components/PostPublisher";
 import PostContent from "@/app/components/PostContent";
 import PostCard from "@/app/components/PostCard";
-import { sendPokeAction } from "@/app/actions/social";
 import { submitTestimonialAction, deleteTestimonialAction } from "@/app/actions/testimonials";
 
 export async function generateMetadata({
@@ -278,18 +277,6 @@ export default async function PerfilUsuario({
                       ✉️ Enviar mensaje
                     </Link>
                   </div>
-
-                  <form action={sendPokeAction} style={{ marginTop: 6 }}>
-                    <input type="hidden" name="to_id" value={profile.id} />
-                    <input type="hidden" name="path" value={`/u/${profile.username}`} />
-                    <button
-                      type="submit"
-                      className="mini"
-                      style={{ width: "100%", textAlign: "center" }}
-                    >
-                      👉 Dar toque / Zumbido
-                    </button>
-                  </form>
                 </div>
               ) : null}
             </div>

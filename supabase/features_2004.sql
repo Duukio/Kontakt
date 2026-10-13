@@ -130,26 +130,3 @@ ALTER TABLE public.blocks ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "blocks_select_own" ON public.blocks FOR SELECT TO authenticated USING (auth.uid() = user_id);
 CREATE POLICY "blocks_insert_own" ON public.blocks FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "blocks_delete_own" ON public.blocks FOR DELETE TO authenticated USING (auth.uid() = user_id);
-
-
--- 5. TABLA DE TOQUES / ZUMBIDOS (POKES)
-CREATE TABLE IF NOT EXISTS public.pokes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  from_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  to_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.pokes ENABLE ROW LEVEL SECURITY;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'pokes_select') THEN
-    CREATE POLICY "pokes_select" ON public.pokes FOR SELECT TO authenticated
-      USING (auth.uid() = from_id OR auth.uid() = to_id);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'pokes_insert') THEN
-    CREATE POLICY "pokes_insert" ON public.pokes FOR INSERT TO authenticated
-      WITH CHECK (auth.uid() = from_id);
-  END IF;
-END $$;

@@ -5,7 +5,6 @@ import {
   markAllNotificationsReadAction,
   deleteNotificationAction,
 } from "./actions";
-import { sendPokeAction } from "@/app/actions/social";
 
 export const metadata = { title: "Notificaciones - Kontakt" };
 
@@ -92,9 +91,6 @@ export default async function NotificacionesPage() {
                   } else if (n.type === "comment") {
                     icono = "💬";
                     texto = "comentó tu publicación";
-                  } else if (n.type === "poke") {
-                    icono = "👉";
-                    texto = "¡te dio un zumbido / toque!";
                   } else if (n.type === "friend_request") {
                     icono = "👥";
                     texto = "te envió una solicitud de amistad";
@@ -152,17 +148,6 @@ export default async function NotificacionesPage() {
                         </div>
                         <div style={{ fontSize: 9, color: "#888", marginTop: 2 }}>{fecha}</div>
                       </div>
-
-                      {/* Acción contextual si es un toque */}
-                      {n.type === "poke" && actor && (
-                        <form action={sendPokeAction}>
-                          <input type="hidden" name="to_id" value={actor.id} />
-                          <input type="hidden" name="path" value="/notificaciones" />
-                          <button type="submit" className="btn" style={{ padding: "2px 8px", fontSize: 10 }}>
-                            👉 Devolver zumbido
-                          </button>
-                        </form>
-                      )}
 
                       <form action={deleteNotificationAction}>
                         <input type="hidden" name="notification_id" value={n.id} />
