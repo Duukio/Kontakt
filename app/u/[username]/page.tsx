@@ -153,6 +153,9 @@ export default async function PerfilUsuario({
         />
       )}
 
+      {error && <div className="msg-error" style={{ marginBottom: 12 }}>{error}</div>}
+      {ok && <div className="msg-ok" style={{ marginBottom: 12 }}>{ok}</div>}
+
       {/* Banner de perfil */}
       {profile.banner_url && (
         <div

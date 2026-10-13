@@ -131,21 +131,45 @@ export async function sendPokeAction(formData: FormData) {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/ingresar");
-  if (toId === user.id) redirect(path);
+  if (!toId || toId === user.id) redirect(path);
 
-  // Registrar el poke / toque
-  await supabase.from("pokes").insert({
-    from_id: user.id,
-    to_id: toId,
-  });
+  try {
+    // 1. Registrar el poke / toque
+    const { error: pokeError } = await supabase.from("pokes").insert({
+      from_id: user.id,
+      to_id: toId,
+    });
 
-  // Notificar al usuario destinatario
-  await supabase.from("notifications").insert({
-    user_id: toId,
-    actor_id: user.id,
-    type: "poke",
-  });
+    if (pokeError) {
+      console.error("Error al registrar el toque en pokes:", pokeError);
+      const url = new URL(path, "http://localhost");
+      url.searchParams.set("error", `Error al dar toque: ${pokeError.message}`);
+      revalidatePath(path);
+      redirect(url.pathname + url.search);
+    }
 
-  revalidatePath(path);
-  redirect(path + "?ok=" + encodeURIComponent("¡Le diste un zumbido/toque!"));
+    // 2. Notificar al usuario destinatario
+    const { error: notifError } = await supabase.from("notifications").insert({
+      user_id: toId,
+      actor_id: user.id,
+      type: "poke",
+    });
+
+    if (notifError) {
+      console.error("Error al crear notificación de toque:", notifError);
+    }
+
+    const url = new URL(path, "http://localhost");
+    url.searchParams.set("ok", "¡Le diste un zumbido / toque!");
+    revalidatePath(path);
+    redirect(url.pathname + url.search);
+  } catch (err: any) {
+    if (err?.digest?.startsWith?.("NEXT_REDIRECT")) {
+      throw err;
+    }
+    console.error("sendPokeAction exception:", err);
+    const url = new URL(path, "http://localhost");
+    url.searchParams.set("error", "Error inesperado al enviar el toque.");
+    redirect(url.pathname + url.search);
+  }
 }
